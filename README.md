@@ -93,9 +93,19 @@ nudge to keep improving it. Four audit agents (qualitative, evidence, infrastruc
 report issues for the creation agent to fix. The agents run on Claude Code (the default) or Codex. See [`src/gym_anything_robotics/creation_audit`](src/gym_anything_robotics/creation_audit).
 
 ```bash
+gar create-audit --action-group PATH_TO_ACTION_GROUP --env-dir benchmarks/roboworld/environments/NEW_ENV
+# Or run creation and auditing separately:
 gar create --action-group PATH_TO_ACTION_GROUP --env-dir benchmarks/roboworld/environments/NEW_ENV
 gar audit --env-dir benchmarks/roboworld/environments/NEW_ENV
 ```
+
+`create-audit` runs creation, an initial four-role audit, then three repair/re-audit cycles by default.
+Every repair resumes the original Creator session with all four preceding reports; every re-audit uses fresh
+auditor sessions. Thus the final repaired environment is audited too (four audit batches in total).
+`--rounds` changes the number of repair/re-audit cycles. Completion means all scheduled reports were generated,
+not that the environment passed physical qualification. The bundled
+[environment guide](src/gym_anything_robotics/creation_audit/memory/environment_guide.md) supplies quality criteria
+and references to the integration code shipped in this checkout.
 
 ## Rendering
 

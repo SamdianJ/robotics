@@ -7,10 +7,10 @@ concrete design, not implementing an environment or solving a robot task.
 
 Read the complete group: every action, its robot and physics capabilities, and
 its grounding, not just its title. Explore relevant seed environments in this
-repository, their reports and actual visual evidence. Read the relevant notes
-in `docs/lessons/`, including `docs/lessons/deposit-cans-v1.md`. Use
-`docs/robot-environment-quality-verbatim.md` for the user's quality standard.
-Paths here are relative to the shared checkout.
+repository, their reports and actual visual evidence. Read the environment
+guide at {context_file} for quality criteria, existing integration code and
+reference environments. Read any project-specific lessons actually present;
+do not assume historical documents absent from this checkout are available.
 
 Research how the activity actually happens. Look at real settings, equipment,
 object placement, robot hardware, dimensions, materials and physical mechanisms.
@@ -20,9 +20,9 @@ sources and justified estimates. Physical calibration is not expected.
 Develop a coherent, realistic and challenging scenario as you research. Think
 through the interactions that matter, equations, units, geometry, numerical
 choices and likely runtime cost. We need physical realism to the degree required
-to represent a meaningful task, not every possible phenomenon. Consult
-`docs/unified-contract.md`, `docs/unified-cli.md` and `robots/README.md` to
-understand the available foundation and how the design fits the project.
+to represent a meaningful task, not every possible phenomenon. Consult the
+source files and tests listed in the guide to understand the available
+foundation and how the design fits the project.
 
 Propose tasks that represent real activities or test nuanced robotic capabilities,
 with diversity in capabilities, difficulty and interaction with components.

@@ -2,15 +2,15 @@
 
 Good, now build the environment in {env_dir} from your research and design in
 {research_file} for the action group at {action_group}. Your job is to finish
-the environment, not to solve its tasks. Read the user's original quality
-criteria in `docs/robot-environment-quality-verbatim.md` and use the seed
+the environment, not to solve its tasks. Read the quality and integration
+criteria in {context_file} and use the seed
 environments as the minimum standard for the finished package.
 
 Implementation, physical experiments, visual inspection, repairs and the report
 go together. Do not stop at a first build milestone. Use the shared runtime and
 robot catalog, with a default robot for this environment and supported robot
 configuration. For an existing environment, preserve working behavior and
-evidence while improving it. Follow `docs/unified-contract.md`.
+evidence while improving it. Follow the existing contracts linked in the guide.
 
 Make the scene believable: objects, placement, materials, lighting and visible
 behavior should belong to the activity. Implement the physical interactions
@@ -46,7 +46,7 @@ simulation/render workers, preserve unrelated services, and use sensible waits
 for long jobs. Follow the project's clean, pushed Git checkpoints and record
 reusable lessons while they are fresh.
 
-Read the four audit prompts in `gym_anything_robotics/creation_audit/memory/`.
+Read the four audit prompts in {audit_prompt_dir}.
 The auditors can examine the code and evidence here; if their reports come
 back, investigate the findings, fix causes and refresh affected evidence.
 Finish with a handoff linking the implementation, report, evidence and runnable

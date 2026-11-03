@@ -277,6 +277,18 @@ def render(kind, data, *, verbose=False):
         if data["status"] == "turns_completed":
             lines.append("Creator turns completed; independent audits have not run.")
         return "\n".join(lines)
+    if kind == "pipeline":
+        lines = [f"Creation-audit pipeline: {data['status']}",
+                 f"Stage: {data['stage']}", f"Environment source: {data['env_dir']}",
+                 f"Repair/re-audit cycles: {data['rounds_completed']} / {data['rounds_requested']}",
+                 f"Creator session: {data.get('creator_session_id') or '-'}",
+                 f"Reports and logs: {data['output_directory']}"]
+        if data.get("final_audit"):
+            lines.append(f"Latest completed audit: {data['final_audit']}")
+        if data.get("error"):
+            lines.append(f"Error: {data['error']}")
+        lines.append(data["qualification"])
+        return "\n".join(lines)
     if kind == "audit":
         lines = [f"Audits: {data['status']}", f"Reports and logs: {data['output_directory']}"]
         for name, entry in data["auditors"].items():

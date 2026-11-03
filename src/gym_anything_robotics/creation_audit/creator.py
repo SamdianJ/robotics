@@ -14,6 +14,7 @@ import uuid
 from . import method
 
 PROMPTS = method.MEMORY / "env_creation_notes"
+CONTEXT = method.MEMORY / "environment_guide.md"
 
 
 def _path(value, workspace):
@@ -22,7 +23,7 @@ def _path(value, workspace):
 
 
 def run_creator(*, action_group, env_dir, workspace, backend=method.DEFAULT_BACKEND, model=None,
-                output=None, prompt_dir=None, claude_bin=None, codex_bin=None,
+                output=None, prompt_dir=None, audit_prompt_dir=None, claude_bin=None, codex_bin=None,
                 timeout_sec=method.DEFAULT_TIMEOUT_SEC, progress=None):
     if os.name != "posix":
         raise RuntimeError("Run the creator on Linux or macOS.")
@@ -43,6 +44,7 @@ def run_creator(*, action_group, env_dir, workspace, backend=method.DEFAULT_BACK
     if target.exists() and not target.is_dir():
         raise ValueError("Environment target is not a directory.")
     prompts = _path(prompt_dir or PROMPTS, workspace)
+    audit_prompts = _path(audit_prompt_dir or method.MEMORY, workspace)
     if not prompts.is_dir():
         raise ValueError(f"Missing prompt directory: {prompts}")
     binary = (method._resolve_bin(claude_bin, "CLAUDE_BIN", "claude") if backend == "cc"
@@ -81,7 +83,8 @@ def run_creator(*, action_group, env_dir, workspace, backend=method.DEFAULT_BACK
         if not template.strip():
             raise ValueError(f"Empty {name} prompt.")
         request = template.format(action_group=str(group), env_dir=str(target),
-                                  research_file=str(research), handoff_file=str(report))
+                                  research_file=str(research), handoff_file=str(report),
+                                  context_file=str(CONTEXT), audit_prompt_dir=str(audit_prompts))
         directory = output / name
         directory.mkdir()
         (directory / "prompt.md").write_text(request, encoding="utf-8")

@@ -5,7 +5,7 @@ from pathlib import Path
 HELP = """Operate persistent robotics environments.
 
 Discover       list, inspect, robots, tasks, doctor
-Build          create
+Build          create, create-audit
 Start/connect  run, serve, sessions, status, keys, dashboard
 Operate        action, pause, resume, stop
 Inspect        observe, state, logs
@@ -184,6 +184,8 @@ def parser():
     creator_arguments(command("create", "Research, build, then blind self-review with a coding agent (not a simulator launch)"))
     from .creation_audit.method import add_arguments as audit_arguments
     audit_arguments(command("audit", "Run shared-workspace coding auditors; reports are not a pass verdict"))
+    from .creation_audit.pipeline import add_arguments as pipeline_arguments
+    pipeline_arguments(command("create-audit", "Create, audit, then run three Creator repair/re-audit cycles"))
     p = command("test", "Run interface contract checks (not physical qualification)")
     p.add_argument("--suite", choices=("contract",), default="contract")
     # Private worker is parsed but deliberately absent from the public menu.
