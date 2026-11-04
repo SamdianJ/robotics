@@ -1,0 +1,43 @@
+{
+  "schema": "gar.check-plan.v1",
+  "launch": {
+    "schema": "gar.launch.v1",
+    "environment_id": "tabletop-push",
+    "backend_options": {}
+  },
+  "cases": [
+    {
+      "name": "hold-1ms",
+      "action": {"type": "named_joint_position", "targets_rad": {}, "ticks": 1},
+      "sim_s": 0.001,
+      "repeat": 3
+    },
+    {
+      "name": "hold-10ms",
+      "action": {"type": "named_joint_position", "targets_rad": {}, "ticks": 10},
+      "sim_s": 0.01,
+      "repeat": 3
+    },
+    {
+      "name": "hold-100ms",
+      "action": {"type": "named_joint_position", "targets_rad": {}, "ticks": 100},
+      "sim_s": 0.1,
+      "repeat": 3
+    },
+    {
+      "name": "joint4-upper-endpoint-regression",
+      "action": {"type": "named_joint_position", "targets_rad": {"arm/fr3_joint4": -0.1518}, "ticks": 500},
+      "sim_s": 0.5,
+      "repeat": 14
+    }
+  ],
+  "max_wall_per_sim": 200,
+  "startup_timeout_s": 180,
+  "request_timeout_s": 120,
+  "images": true,
+  "checkpoint": true,
+  "checkpoint_ignore_fields": {
+    "generation": "Monotonic checkpoint branch identifier, intentionally incremented by TabletopPushBackend.restore_checkpoint; all physical fields remain compared."
+  },
+  "physics_trace": true
+}

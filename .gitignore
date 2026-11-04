@@ -7,5 +7,6 @@ dist/
 .cache/
 .runtime-cache/
 runs/
+artifacts/pipelines/
 *.task.json
 .DS_Store

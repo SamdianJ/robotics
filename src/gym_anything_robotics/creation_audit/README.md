@@ -9,6 +9,68 @@ Both commands run a coding-agent CLI with full access to the workspace, so run t
 the agent. Claude Code is the default backend (`--backend cc`, model `claude-opus-5-5`, effort `xhigh`). Codex is the
 other backend (`--backend codex`), and it uses the model in your Codex config. `--model` overrides the model.
 
+## Run the complete loop
+
+```bash
+gar create-audit --action-group PATH_TO_ACTION_GROUP --env-dir benchmarks/roboworld/environments/NEW_ENV
+# Use the configured Codex model instead of the default Claude backend:
+gar create-audit --action-group PATH_TO_ACTION_GROUP --env-dir benchmarks/roboworld/environments/NEW_ENV --backend codex
+```
+
+The scheduler first runs Research, Build and Blind nudge in one Creator session,
+then runs an initial audit with all four roles. It performs **three repair/re-audit
+cycles** by default (`--rounds 3`):
+
+1. Collect all four preceding reports into a feedback file, retaining their paths
+   and SHA-256 digests. The packet contains the full reports, not a model summary.
+2. Resume the original Creator session with the [repair prompt](memory/env_creation_notes/repair_prompt.md).
+   The Creator investigates findings, fixes causes, refreshes affected evidence,
+   and writes a new handoff describing fixes, verification and unresolved issues.
+3. Run all four auditors again, each in a fresh session. These reports become the
+   next cycle's feedback; the last cycle's reports review the final repaired code.
+
+Three cycles mean three repairs and four full audit batches, including the initial
+audit. Each auditor makes two CLI calls (explore, then audit), so the default run
+has 38 calls: 3 creation calls + 8 initial audit calls + 3 × (1 repair + 8 audit calls).
+Auditors run sequentially in the shared checkout. Independent sessions do not
+isolate the filesystem or enforce read-only access.
+
+The pipeline fails if creation fails, a required report is missing/empty, a repair
+fails or changes session identity, or any audit batch fails. A failed audit batch
+is not used as complete feedback. No later repair cycle starts after a failure.
+Completed records remain available; interruption is recorded in the run manifest.
+`--timeout-sec` applies to each agent invocation, not to the whole pipeline.
+The existing invocation runner cleans up its own agent subprocess group on timeout
+or interruption. This command does not automatically resume an interrupted run;
+inspect its retained records before deciding how to continue. Existing output
+directories are never overwritten.
+
+Artifacts are saved under `artifacts/pipelines/<environment>-<time>-<id>/`:
+
+```text
+run.json                    overall status, stage, Creator ID and cycle records
+creation/                   research, build, nudge and their logs
+initial-audit/              first four reports, prompts and logs
+round-01/                   repeated for round-02 and round-03
+  feedback.md               complete preceding reports and source digests
+  repair-prompt.md           exact request given to the Creator
+  repair.jsonl              Creator response log (with separate stderr log)
+  repair-handoff.md          fresh repair record
+  audit/                    independent re-audit reports, prompts and logs
+```
+
+**Exit code zero means the scheduled workflow completed, not that the simulation
+passed.** Negative findings do not cause early exit or get reclassified as passing.
+Read the final reports for the remaining issues and qualification evidence.
+
+Default research, build and repair prompts reference the bundled
+[environment guide](memory/environment_guide.md), using its resolved filesystem
+path. It lists existing source contracts, tests and reference environments. This
+replaces references to unpublished `docs/` material; no missing historical notes
+or original user wording have been fabricated. Record new lessons in the handoff.
+`--prompt-dir` overrides all four Creator prompt files (including `repair_prompt.md`);
+`--memory-dir` overrides the four audit prompts for this pipeline.
+
 ## Create a simulation
 
 ```bash
@@ -50,3 +112,12 @@ report was written, not that the simulation passed. Each call times out after tw
 The evidence auditor can also send videos to Gemini (`gemini-3.8-flash`) with a [video tool](memory/video_tool.md). It
 needs `pip install -e '.[creation-audit]'` and `GEMINI_API_KEY` or `GOOGLE_API_KEY`. Without them the auditor is told
 that the tool is not available.
+# Fixed checks
+
+`gar check --plan ENV_DIR/checks.json --output NEW_DIRECTORY` runs repeatable
+interface and evidence probes without a model call. See
+[the plan format and interpretation](memory/fixed_checks.md).
+`gar audit` and each audit batch in `gar create-audit` discover `ENV_DIR/checks.json`
+automatically, or accept `--check-plan PATH`. Results are supplied to every auditor
+and included with their reports in the next Creator feedback. Failed checks still
+reach the auditors and Creator; an absent plan is explicitly recorded as unconfigured.

@@ -129,6 +129,15 @@ def main(argv=None):
                 return 130
             show("creator", result)
             return 0 if result["status"] == "turns_completed" else 1
+        elif command == "create-audit":
+            from .creation_audit.pipeline import from_args
+            try:
+                result = from_args(args, progress=progress)
+            except KeyboardInterrupt:
+                progress("Creation-audit pipeline interrupted; reports and logs retained.")
+                return 130
+            show("pipeline", result)
+            return 0 if result["status"] == "completed" else 1
         elif command == "audit":
             from .creation_audit.method import from_args
             try:
@@ -138,6 +147,15 @@ def main(argv=None):
                 return 130
             show("audit", result)
             return 0 if result["status"] == "reports_written" else 1
+        elif command == "check":
+            from .checks import from_args
+            try:
+                result = from_args(args, progress=progress)
+            except KeyboardInterrupt:
+                progress("Checks interrupted; partial results retained and owned session cleanup attempted.")
+                return 130
+            show("checks", result)
+            return 0 if result["status"] == "passed" else 1
         elif command == "doctor":
             result = doctor(LaunchSpec(args.environment))
             show("doctor", result)
