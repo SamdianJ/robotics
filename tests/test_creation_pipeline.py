@@ -227,6 +227,36 @@ class PipelineTests(unittest.TestCase):
              contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(cli.main(args), 1)
 
+    def test_fixed_checks_run_once_per_batch_and_failures_reach_creator(self):
+        observations = []
+        def fixed_checks(*, plan, output, workspace, progress):
+            output.mkdir()
+            result = dict(schema='gar.check-results.v1', status='failed',
+                          checks=[dict(name='performance', status='failed')])
+            (output/'results.json').write_text(json.dumps(result))
+            observations.append((len(self.calls()), output))
+            return result
+        with patch('gym_anything_robotics.checks.run_checks', side_effect=fixed_checks):
+            result = self.run_pipeline(check_plan=self.root/'explicit-plan.json')
+        self.assertEqual(result['status'], 'completed', result)
+        self.assertEqual([n for n, _ in observations], [3, 12, 21, 30])
+        for cycle in result['rounds']:
+            source = next(s for s in cycle['sources'] if s['auditor'] == 'fixed_checks')
+            self.assertEqual(source['sha256'], hashlib.sha256(Path(source['report']).read_bytes()).hexdigest())
+            self.assertIn('"performance"', Path(cycle['feedback']).read_text())
+        audits = [c for c in self.calls() if c['kind'] == 'audit']
+        self.assertEqual(len(audits), 16)
+        self.assertTrue(all('Fixed deterministic checks ran' in c['prompt'] for c in audits))
+
+    def test_invalid_discovered_plan_fails_before_model_calls(self):
+        env = self.root/'env'; env.mkdir()
+        (env/'checks.json').write_text('{"schema":"invalid"}')
+        result = method.run_audits(env_dir=env, workspace=self.root, backend='codex',
+                                   codex_bin=str(self.binary), progress=lambda _: None)
+        self.assertEqual(result['status'], 'failed')
+        self.assertIn('gar.check-plan.v1', result['error'])
+        self.assertEqual(self.calls(), [])
+
 
 class PromptReferenceTests(unittest.TestCase):
     def test_default_prompts_use_shipped_context_and_real_sources(self):

@@ -291,11 +291,18 @@ def render(kind, data, *, verbose=False):
         return "\n".join(lines)
     if kind == "audit":
         lines = [f"Audits: {data['status']}", f"Reports and logs: {data['output_directory']}"]
+        if data.get("checks"):
+            lines.append(f"Fixed checks: {data['checks']['status']}")
         for name, entry in data["auditors"].items():
             lines.append(f"{name}: {entry['status']} — {entry['report']}")
             if entry.get("error"):
                 lines.append(f"  Error: {entry['error']}")
         lines.append("Report generation is not an environment pass; read the auditors' findings.")
+        return "\n".join(lines)
+    if kind == "checks":
+        lines = [f"Fixed checks: {data['status']}", f"Results: {data['output_directory']}/results.json"]
+        lines += [f"{item['status']}: {item['name']}" for item in data["checks"]]
+        lines.append(data["qualification"])
         return "\n".join(lines)
     if kind == "test":
         return f"Contract tests {'PASSED' if data['ok'] else 'FAILED'}: {data['tests_run']} run, {data['failures']} failures, {data['errors']} errors.\nInterface checks only; not physical qualification."

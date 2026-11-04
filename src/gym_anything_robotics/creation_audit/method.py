@@ -165,7 +165,7 @@ def _video_note():
 
 def run_audits(*, env_dir, workspace, auditors=AUDITORS, backend=DEFAULT_BACKEND, model=None,
                output=None, memory_dir=None, claude_bin=None, codex_bin=None,
-               timeout_sec=DEFAULT_TIMEOUT_SEC, progress=None):
+               timeout_sec=DEFAULT_TIMEOUT_SEC, progress=None, check_plan=None):
     if os.name != "posix":
         raise RuntimeError("Run the auditors on Linux or macOS.")
     if backend not in ("cc", "codex"):
@@ -210,6 +210,24 @@ def run_audits(*, env_dir, workspace, auditors=AUDITORS, backend=DEFAULT_BACKEND
     progress = progress or (lambda message: print(message, file=sys.stderr, flush=True))
     progress(f"Auditing {env_dir}\nReports and logs: {output}")
     try:
+        # One fixed probe per candidate version, shared as evidence by all four roles.
+        # A failed check is feedback to repair, not a reason to suppress the auditors.
+        plan = Path(check_plan) if check_plan is not None else env_dir / "checks.json"
+        if not plan.is_absolute():
+            plan = workspace / plan
+        checks_note = "Fixed checks were not configured; do not claim they passed."
+        if check_plan is not None or plan.is_file():
+            from gym_anything_robotics.checks import run_checks
+            checked = run_checks(plan=plan, output=output / "checks", workspace=workspace, progress=progress)
+            report_path = output / "checks" / "results.json"
+            result["checks"] = dict(status=checked["status"], report=str(report_path))
+            checks_note = (f"Fixed deterministic checks ran before this audit. Read @{report_path}. "
+                           "Treat failures and skipped coverage explicitly. Reuse the retained measurements; "
+                           "do not rewrite the standard probe. Add bounded scene-specific checks where needed. "
+                           "These checks do not establish physical fidelity or visual correctness.")
+        else:
+            result["checks"] = dict(status="not_configured")
+        save()
         for auditor in auditors:
             directory = output / auditor
             directory.mkdir()
@@ -234,7 +252,7 @@ def run_audits(*, env_dir, workspace, auditors=AUDITORS, backend=DEFAULT_BACKEND
                 session = _invoke(
                     backend, binary, _audit_run_prompt(
                         prompt_file, env_dir, report,
-                        video_note=_video_note() if auditor == "evidence" else "",
+                        video_note=checks_note + ("\n" + _video_note() if auditor == "evidence" else ""),
                     ), session_id=session, resume=True, workspace=workspace, timeout=timeout_sec,
                     log=directory / "audit.jsonl", model=model,
                 )
@@ -248,6 +266,9 @@ def run_audits(*, env_dir, workspace, auditors=AUDITORS, backend=DEFAULT_BACKEND
             save()
         result["status"] = ("reports_written" if all(
             e["status"] == "report_written" for e in result["auditors"].values()) else "failed")
+    except (OSError, ValueError, RuntimeError, KeyError, TypeError) as error:
+        result.update(status="failed", error=str(error))
+        progress(f"Audit setup/checks FAILED: {error}")
     except BaseException:
         result["status"] = "interrupted"
         for entry in result["auditors"].values():
@@ -269,6 +290,8 @@ def add_arguments(parser):
     parser.add_argument("--workspace", type=Path, default=Path.cwd(), help="Shared checkout (default: current directory)")
     parser.add_argument("--output", type=Path, help="New report/log directory; never overwrites an existing run")
     parser.add_argument("--memory-dir", type=Path, help="Override the four Markdown prompt files")
+    parser.add_argument("--check-plan", type=Path,
+                        help="Fixed checks plan (default: ENV_DIR/checks.json when present)")
     parser.add_argument("--claude-bin", help="Claude CLI executable path")
     parser.add_argument("--codex-bin", help="Codex CLI executable path")
     parser.add_argument("--timeout-sec", type=int, default=DEFAULT_TIMEOUT_SEC,
@@ -288,6 +311,7 @@ def from_args(args, progress=None):
             backend=args.backend, model=args.model, output=args.output, memory_dir=args.memory_dir,
             claude_bin=args.claude_bin, codex_bin=args.codex_bin, timeout_sec=args.timeout_sec,
             progress=progress,
+            check_plan=args.check_plan,
         )
     finally:
         if handling:

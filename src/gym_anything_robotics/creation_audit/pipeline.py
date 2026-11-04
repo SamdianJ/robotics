@@ -17,7 +17,7 @@ from . import creator, method
 def run_pipeline(*, action_group, env_dir, workspace, rounds=3,
                  backend=method.DEFAULT_BACKEND, model=None, output=None,
                  prompt_dir=None, memory_dir=None, claude_bin=None, codex_bin=None,
-                 timeout_sec=method.DEFAULT_TIMEOUT_SEC, progress=None):
+                 timeout_sec=method.DEFAULT_TIMEOUT_SEC, progress=None, check_plan=None):
     """An initial audit plus ``rounds`` repairs, each followed by a fresh full audit.
 
     Completion means the scheduled calls and reports completed, not that the
@@ -72,7 +72,7 @@ def run_pipeline(*, action_group, env_dir, workspace, rounds=3,
                   timeout_sec=timeout_sec, progress=progress)
 
     def audit(directory):
-        reports = method.run_audits(output=directory, memory_dir=memory, **common)
+        reports = method.run_audits(output=directory, memory_dir=memory, check_plan=check_plan, **common)
         if reports["status"] != "reports_written":
             raise RuntimeError(f"Audit did not complete; inspect {directory / 'run.json'}")
         # Preserve exact report content and its provenance in the next feedback packet.
@@ -86,6 +86,12 @@ def run_pipeline(*, action_group, env_dir, workspace, rounds=3,
             if not data.strip():
                 raise RuntimeError(f"Empty audit report: {report}")
             sources.append(dict(auditor=role, report=str(report),
+                                sha256=hashlib.sha256(data).hexdigest(), text=data.decode("utf-8")))
+        fixed = reports.get("checks", {})
+        if fixed.get("report"):
+            report = Path(fixed["report"])
+            data = report.read_bytes()
+            sources.append(dict(auditor="fixed_checks", report=str(report),
                                 sha256=hashlib.sha256(data).hexdigest(), text=data.decode("utf-8")))
         return sources
 
@@ -161,6 +167,8 @@ def add_arguments(parser):
     parser.add_argument("--rounds", type=int, default=3,
                         help="Repair/re-audit cycles after the initial audit (default: 3)")
     parser.add_argument("--memory-dir", type=Path, help="Override the four audit prompt files")
+    parser.add_argument("--check-plan", type=Path,
+                        help="Fixed checks before each audit (default: ENV_DIR/checks.json when present)")
     # The existing create command only needs three prompts; the pipeline needs repair too.
     for action in parser._actions:
         if action.dest == "prompt_dir":
@@ -178,7 +186,7 @@ def from_args(args, progress=None):
             workspace=args.workspace, rounds=args.rounds, backend=args.backend, model=args.model,
             output=args.output, prompt_dir=args.prompt_dir, memory_dir=args.memory_dir,
             claude_bin=args.claude_bin, codex_bin=args.codex_bin,
-            timeout_sec=args.timeout_sec, progress=progress)
+            timeout_sec=args.timeout_sec, progress=progress, check_plan=args.check_plan)
     finally:
         if handling:
             signal.signal(signal.SIGTERM, previous)

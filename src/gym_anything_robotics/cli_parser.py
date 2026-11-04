@@ -9,7 +9,7 @@ Build          create, create-audit
 Start/connect  run, serve, sessions, status, keys, dashboard
 Operate        action, pause, resume, stop
 Inspect        observe, state, logs
-Evaluate       verify, benchmark, export, test, audit
+Evaluate       verify, benchmark, export, test, check, audit
 
 Examples:
   gar run laundry --task shirt --port 8896 --policy-key
@@ -186,6 +186,8 @@ def parser():
     audit_arguments(command("audit", "Run shared-workspace coding auditors; reports are not a pass verdict"))
     from .creation_audit.pipeline import add_arguments as pipeline_arguments
     pipeline_arguments(command("create-audit", "Create, audit, then run three Creator repair/re-audit cycles"))
+    from .checks import add_arguments as check_arguments
+    check_arguments(command("check", "Run fixed interface/evidence checks in a new isolated session"))
     p = command("test", "Run interface contract checks (not physical qualification)")
     p.add_argument("--suite", choices=("contract",), default="contract")
     # Private worker is parsed but deliberately absent from the public menu.

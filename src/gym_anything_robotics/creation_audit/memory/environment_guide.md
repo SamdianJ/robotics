@@ -60,3 +60,13 @@ The four audit prompts alongside this guide define the independent review roles.
 Auditors and Creators share a writable checkout; separate agent sessions do not
 provide filesystem isolation. Keep audit records intact, preserve unrelated
 services, and clean up only workers created for your own experiments.
+# Repeatable base checks
+
+Read `fixed_checks.md` beside this guide. Create an environment-local `checks.json`
+with a small legal hold, bounded regression actions, the real launch/task recipe,
+and current evidence video paths. The outer auditor launcher runs `gar check`
+once per candidate before the four audits and attaches its structured results.
+Reuse these tools for startup, permissions, checkpoint continuation, history,
+media decoding and performance; reserve custom probes for scene-specific gaps.
+Preserve failed results and coverage exclusions. Do not weaken the check tool or
+the agreed performance limit to make an environment pass.

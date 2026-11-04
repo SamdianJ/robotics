@@ -112,3 +112,12 @@ report was written, not that the simulation passed. Each call times out after tw
 The evidence auditor can also send videos to Gemini (`gemini-3.8-flash`) with a [video tool](memory/video_tool.md). It
 needs `pip install -e '.[creation-audit]'` and `GEMINI_API_KEY` or `GOOGLE_API_KEY`. Without them the auditor is told
 that the tool is not available.
+# Fixed checks
+
+`gar check --plan ENV_DIR/checks.json --output NEW_DIRECTORY` runs repeatable
+interface and evidence probes without a model call. See
+[the plan format and interpretation](memory/fixed_checks.md).
+`gar audit` and each audit batch in `gar create-audit` discover `ENV_DIR/checks.json`
+automatically, or accept `--check-plan PATH`. Results are supplied to every auditor
+and included with their reports in the next Creator feedback. Failed checks still
+reach the auditors and Creator; an absent plan is explicitly recorded as unconfigured.

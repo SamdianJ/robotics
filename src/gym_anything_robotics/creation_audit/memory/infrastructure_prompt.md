@@ -8,4 +8,11 @@ Alright, look at {env_dir}. Check these three things:
 
 Inspect the implementation and the available evidence. You can execute checks if needed; do not accept a claim just because it appears in a report.
 
+Read the fixed-check results supplied by the launcher, including failed and skipped
+items, CLI captures and measured workloads. Use the shared `gar check` tool described
+in `fixed_checks.md` beside this prompt for standard interface checks. A valid
+`gar verify` result with success=false exits 1; that is not an interface error.
+Do not silently reinterpret or overwrite the raw probe results. Use additional
+bounded probes only for missing or disputed coverage.
+
 Save your full audit to {audit_file}, explaining what is ready and what needs fixing.
